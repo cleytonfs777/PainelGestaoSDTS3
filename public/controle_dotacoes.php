@@ -659,70 +659,60 @@ ob_start();
                 <table class="dotacoes-table">
                     <thead>
                         <tr>
-                            <th>Dotação</th>
-                            <th>Receitas por Fonte</th>
-                            <th>Despesas por Fonte</th>
+                            <th>Elemento Item (Grupo.Elemento)</th>
+                            <th>Receitas Detalhadas</th>
+                            <th>Despesas Detalhadas</th>
                             <th>Total Receita</th>
                             <th>Total Despesa</th>
                             <th>Saldo</th>
-                            <th>Unidades</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <?php foreach ($dotacoes as $dotacao): ?>
+                        <?php foreach ($saldos_por_elemento as $elemento): ?>
                             <tr>
                                 <td>
-                                    <div class="dotacao-code"><?php echo $dotacao['dotacao']; ?></div>
+                                    <div class="dotacao-code"><?php echo $elemento['elemento_key']; ?></div>
                                     <div style="font-size: 0.8rem; color: #666;">
-                                        Ação: <?php echo $dotacao['acao']; ?> | 
-                                        Grupo: <?php echo $dotacao['grupo']; ?> | 
-                                        Elemento: <?php echo $dotacao['elemento_item']; ?>
+                                        Grupo: <?php echo $elemento['grupo']; ?> | 
+                                        Elemento: <?php echo str_pad($elemento['elemento_item'], 6, '0', STR_PAD_LEFT); ?>
                                     </div>
                                 </td>
                                 <td>
-                                    <div class="fontes-detalhes">
-                                        <?php if (!empty($dotacao['receitas_por_fonte'])): ?>
-                                            <?php foreach ($dotacao['receitas_por_fonte'] as $fonte => $valor): ?>
-                                                <div class="fonte-item">
-                                                    <span>Fonte <?php echo $fonte; ?>:</span>
-                                                    <span><?php echo formatarMoeda($valor); ?></span>
+                                    <div class="fonte-details">
+                                        <?php if (!empty($elemento['receitas_detalhadas'])): ?>
+                                            <?php foreach ($elemento['receitas_detalhadas'] as $receita): ?>
+                                                <div style="margin-bottom: 5px;">
+                                                    <strong><?php echo $receita['dotacao']; ?></strong><br>
+                                                    <?php foreach ($receita['receitas_por_fonte'] as $fonte => $valor): ?>
+                                                        <small>Fonte <?php echo $fonte; ?>: <?php echo formatarMoeda($valor); ?></small><br>
+                                                    <?php endforeach; ?>
                                                 </div>
                                             <?php endforeach; ?>
                                         <?php else: ?>
-                                            <em>Nenhuma receita</em>
+                                            <span style="color: #999;">Nenhuma receita</span>
                                         <?php endif; ?>
                                     </div>
                                 </td>
                                 <td>
-                                    <div class="fontes-detalhes">
-                                        <?php if (!empty($dotacao['despesas_por_fonte'])): ?>
-                                            <?php foreach ($dotacao['despesas_por_fonte'] as $fonte => $valor): ?>
-                                                <div class="fonte-item">
-                                                    <span>Fonte <?php echo $fonte; ?>:</span>
-                                                    <span><?php echo formatarMoeda($valor); ?></span>
+                                    <div class="fonte-details">
+                                        <?php if (!empty($elemento['despesas_detalhadas'])): ?>
+                                            <?php foreach ($elemento['despesas_detalhadas'] as $despesa): ?>
+                                                <div style="margin-bottom: 5px;">
+                                                    <strong><?php echo $despesa['dotacao']; ?></strong><br>
+                                                    <?php foreach ($despesa['despesas_por_fonte'] as $fonte => $valor): ?>
+                                                        <small>Fonte <?php echo $fonte; ?>: <?php echo formatarMoeda($valor); ?></small><br>
+                                                    <?php endforeach; ?>
                                                 </div>
                                             <?php endforeach; ?>
                                         <?php else: ?>
-                                            <em>Nenhuma despesa</em>
+                                            <span style="color: #999;">Nenhuma despesa</span>
                                         <?php endif; ?>
                                     </div>
                                 </td>
-                                <td class="valor-positivo"><?php echo formatarMoeda($dotacao['total_receita']); ?></td>
-                                <td class="valor-negativo"><?php echo formatarMoeda($dotacao['total_despesa']); ?></td>
-                                <td class="<?php echo $dotacao['saldo'] > 0 ? 'valor-positivo' : ($dotacao['saldo'] < 0 ? 'valor-negativo' : 'valor-neutro'); ?>">
-                                    <?php echo formatarMoeda($dotacao['saldo']); ?>
-                                </td>
-                                <td>
-                                    <div class="unidades-lista">
-                                        <?php if (!empty($dotacao['unidades_receita'])): ?>
-                                            <strong>Receita:</strong><br>
-                                            <?php echo implode(', ', $dotacao['unidades_receita']); ?><br>
-                                        <?php endif; ?>
-                                        <?php if (!empty($dotacao['unidades_despesa'])): ?>
-                                            <strong>Despesa:</strong><br>
-                                            <?php echo implode(', ', $dotacao['unidades_despesa']); ?>
-                                        <?php endif; ?>
-                                    </div>
+                                <td class="value receita-value"><?php echo formatarMoeda($elemento['total_receita']); ?></td>
+                                <td class="value despesa-value"><?php echo formatarMoeda($elemento['total_despesa']); ?></td>
+                                <td class="value saldo-value <?php echo $elemento['saldo'] >= 0 ? 'positivo' : 'negativo'; ?>">
+                                    <?php echo formatarMoeda($elemento['saldo']); ?>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
