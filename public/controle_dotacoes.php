@@ -236,20 +236,23 @@ foreach ($saldos_por_elemento as $key => $elemento) {
     $saldos_por_elemento[$key]['saldo'] = $elemento['total_receita'] - $elemento['total_despesa'];
 }
 
-// Calcular saldos e limpar unidades duplicadas
-foreach ($dotacoes as &$dotacao) {
-    $dotacao['saldo'] = $dotacao['total_receita'] - $dotacao['total_despesa'];
-    $dotacao['unidades_receita'] = array_unique($dotacao['unidades_receita']);
-    $dotacao['unidades_despesa'] = array_unique($dotacao['unidades_despesa']);
-}
-
-// Buscar todas as dotações disponíveis para o filtro
-$dotacoes_disponiveis_query = "
+// Buscar todas as dotações disponíveis para o filtro (receitas e despesas separadamente)
+$dotacoes_receitas_query = "
     SELECT DISTINCT ci.acao, ci.grupo, ci.elemento_item
     FROM CatalogoItens ci
+    WHERE ci.tipo = 'Receita'
     ORDER BY ci.acao, ci.grupo, ci.elemento_item
 ";
-$dotacoes_disponiveis = $pdo->query($dotacoes_disponiveis_query)->fetchAll();
+
+$dotacoes_despesas_query = "
+    SELECT DISTINCT ci.grupo, ci.elemento_item
+    FROM CatalogoItens ci
+    WHERE ci.tipo = 'Despesa'
+    ORDER BY ci.grupo, ci.elemento_item
+";
+
+$dotacoes_receitas_disponiveis = $pdo->query($dotacoes_receitas_query)->fetchAll();
+$dotacoes_despesas_disponiveis = $pdo->query($dotacoes_despesas_query)->fetchAll();
 
 ob_start();
 ?>
@@ -554,7 +557,7 @@ ob_start();
     <div class="container">
         <div class="header">
             <h1>Controle de Dotações Orçamentárias</h1>
-            <p>Controle por Ação.Grupo.Elemento com Agregação de Fontes</p>
+            <p>Saldos por Elemento Item: Receitas (Ação.Grupo.Elemento) vs Despesas (Grupo.Elemento)</p>
         </div>
         
         <div class="filters-section">
@@ -577,12 +580,22 @@ ob_start();
                         <label>Dotação Específica (opcional)</label>
                         <select name="dotacao">
                             <option value="">Todas as dotações</option>
-                            <?php foreach ($dotacoes_disponiveis as $dot): ?>
-                                <?php $dot_formatted = formatarDotacao($dot['acao'], $dot['grupo'], $dot['elemento_item']); ?>
-                                <option value="<?php echo $dot_formatted; ?>" <?php echo ($dot_formatted == $dotacao_filtro) ? 'selected' : ''; ?>>
-                                    <?php echo $dot_formatted; ?>
-                                </option>
-                            <?php endforeach; ?>
+                            <optgroup label="Receitas (Ação.Grupo.Elemento)">
+                                <?php foreach ($dotacoes_receitas_disponiveis as $dot): ?>
+                                    <?php $dot_formatted = formatarDotacao($dot['acao'], $dot['grupo'], $dot['elemento_item']); ?>
+                                    <option value="<?php echo $dot_formatted; ?>" <?php echo ($dot_formatted == $dotacao_filtro) ? 'selected' : ''; ?>>
+                                        <?php echo $dot_formatted; ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </optgroup>
+                            <optgroup label="Despesas (Grupo.Elemento)">
+                                <?php foreach ($dotacoes_despesas_disponiveis as $dot): ?>
+                                    <?php $dot_formatted = formatarDotacaoDespesa($dot['grupo'], $dot['elemento_item']); ?>
+                                    <option value="<?php echo $dot_formatted; ?>" <?php echo ($dot_formatted == $dotacao_filtro) ? 'selected' : ''; ?>>
+                                        <?php echo $dot_formatted; ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </optgroup>
                         </select>
                     </div>
                 </div>
@@ -607,7 +620,7 @@ ob_start();
             </form>
         </div>
         
-        <?php if (!empty($dotacoes)): ?>
+        <?php if (!empty($saldos_por_elemento)): ?>
             <div class="resultados-section">
                 <div class="periodo-info">
                     <strong>Período consultado:</strong> 
@@ -619,8 +632,8 @@ ob_start();
                 </div>
                 
                 <?php
-                $total_geral_receita = array_sum(array_column($dotacoes, 'total_receita'));
-                $total_geral_despesa = array_sum(array_column($dotacoes, 'total_despesa'));
+                $total_geral_receita = array_sum(array_column($saldos_por_elemento, 'total_receita'));
+                $total_geral_despesa = array_sum(array_column($saldos_por_elemento, 'total_despesa'));
                 $saldo_geral = $total_geral_receita - $total_geral_despesa;
                 ?>
                 
@@ -638,8 +651,8 @@ ob_start();
                         <div class="resumo-label">Saldo Geral</div>
                     </div>
                     <div class="resumo-card">
-                        <div class="resumo-value"><?php echo count($dotacoes); ?></div>
-                        <div class="resumo-label">Dotações</div>
+                        <div class="resumo-value"><?php echo count($saldos_por_elemento); ?></div>
+                        <div class="resumo-label">Elementos</div>
                     </div>
                 </div>
                 
